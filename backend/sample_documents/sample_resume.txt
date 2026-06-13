@@ -1,0 +1,18 @@
+RESUME - MAYA PATEL
+Product Engineer
+
+Summary
+Product-focused software engineer with six years of experience building reliable web applications.
+
+Skills
+Python, TypeScript, FastAPI, React, PostgreSQL, Docker, and AWS.
+
+Work Experience
+Senior Software Engineer, Brightworks Labs, 2022 to present.
+Built document automation services that reduced manual review time by 38 percent.
+
+Software Engineer, Civic Systems, 2020 to 2022.
+Developed accessible public-service portals used by more than 100,000 residents.
+
+Education
+Bachelor of Technology in Computer Science, 2020.

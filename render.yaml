@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: docuscope-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/health
+    envVars:
+      - key: FRONTEND_URL
+        sync: false
+      - key: LLM_PROVIDER
+        value: groq
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
+      - key: DATABASE_URL
+        value: sqlite:////tmp/docuscope/app.db
+      - key: STORAGE_DIR
+        value: /tmp/docuscope/storage
+      - key: CHROMA_DIR
+        value: /tmp/docuscope/storage/chroma
+      - key: ENABLE_SEMANTIC_SEARCH
+        value: "true"
+      - key: SINGLE_USER_MODE
+        value: "true"
+      - key: WORKSPACE_ACCESS_TOKENS
+        sync: false
+      - key: STORE_CHAT_LOGS
+        value: "false"

@@ -1,0 +1,37 @@
+# Secrets
+.env
+.env.*
+!.env.example
+frontend/.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+backend/venv/
+backend/.venv/
+
+# Runtime data
+backend/app.db
+backend/*.db
+backend/storage/originals/*
+backend/storage/pages/*
+backend/storage/chroma/*
+!backend/storage/originals/.gitkeep
+!backend/storage/pages/.gitkeep
+!backend/storage/chroma/.gitkeep
+
+# Node / Next
+node_modules/
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/*.tsbuildinfo
+npm-debug.log*
+
+# OS and editors
+.DS_Store
+.idea/
+.vscode/

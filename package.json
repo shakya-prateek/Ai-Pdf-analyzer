@@ -1,0 +1,16 @@
+{
+  "name": "pdf-analyzer",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:frontend": "npm --prefix frontend install",
+    "dev": "node scripts/dev.mjs",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "start": "npm --prefix frontend run start",
+    "backend": "backend/venv/bin/uvicorn app.main:app --app-dir backend --reload",
+    "ingest:samples": "backend/venv/bin/python backend/scripts/ingest_samples.py",
+    "test:backend": "cd backend && venv/bin/pytest tests -q",
+    "typecheck": "npm --prefix frontend run typecheck"
+  }
+}

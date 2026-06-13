@@ -1,0 +1,14 @@
+NORTHSTAR OFFICE SUPPLIES
+Invoice INV-2026-1042
+Invoice date: May 14, 2026
+Bill to: Acme Design Studio
+
+Items:
+Ergonomic desk chairs, quantity 4, unit price $225.00, total $900.00
+Monitor arms, quantity 4, unit price $85.00, total $340.00
+Delivery, total $60.00
+
+Subtotal: $1,300.00
+Tax: $104.00
+Amount due: $1,404.00
+Payment terms: Net 30. Payment is due June 13, 2026.

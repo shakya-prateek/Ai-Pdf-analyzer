@@ -1,0 +1,9 @@
+REMOTE WORK AND INFORMATION SECURITY POLICY
+Effective date: January 1, 2026
+
+Employees may work remotely up to three days per week with manager approval.
+Company devices must use full-disk encryption and automatic security updates.
+Confidential documents may not be stored on personal devices or personal cloud accounts.
+Employees must use the company VPN when accessing internal systems from public networks.
+Suspected loss of a device or disclosure of confidential information must be reported to Security within one hour.
+Repeated violations may result in removal of remote-work privileges.
