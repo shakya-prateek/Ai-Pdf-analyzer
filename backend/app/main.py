@@ -42,7 +42,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(
-    title="Document Intelligence + Agentic RAG",
+    title="AskMyPDF AI",
     version="1.0.0",
     lifespan=lifespan,
 )

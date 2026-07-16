@@ -15,10 +15,10 @@ export function AppHeader() {
   return (
     <header className="app-header">
       <div className="app-header__inner">
-        <Link href="/" className="brand" aria-label="DocuScope home">
+        <Link href="/" className="brand" aria-label="AskMyPDF AI home">
           <span className="brand__mark"><BrandIcon className="h-5 w-5" /></span>
           <span>
-            <strong>PDF Analyzer</strong>
+            <strong>AskMyPDF AI</strong>
             <small>Evidence workspace</small>
           </span>
         </Link>

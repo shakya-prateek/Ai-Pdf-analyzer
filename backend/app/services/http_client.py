@@ -18,7 +18,7 @@ def load_json(
     retries: int = 2,
 ) -> dict[str, Any]:
     if not request.has_header("User-agent"):
-        request.add_header("User-Agent", "DocuScope/1.0")
+        request.add_header("User-Agent", "AskMyPDF AI/1.0")
     for attempt in range(retries + 1):
         try:
             with urllib.request.urlopen(

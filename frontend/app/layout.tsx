@@ -4,8 +4,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "PDF Analyzer | AI Workspace",
-    template: "%s | PDF Analyzer"
+    default: "AskMyPDF AI | AI Workspace",
+    template: "%s | AskMyPDF AI"
   },
   description: "No-login AI workspace for PDF analysis, writing, and study tools",
   icons: {

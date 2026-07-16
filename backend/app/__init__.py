@@ -1,1 +1,1 @@
-"""Document Intelligence backend."""
+"""AskMyPDF AI backend."""

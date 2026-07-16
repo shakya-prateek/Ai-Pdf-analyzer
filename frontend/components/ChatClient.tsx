@@ -329,7 +329,7 @@ export function ChatClient() {
                 className={message.role === "user" ? "message message--user" : "message message--assistant"}
               >
                 <div className="message__meta">
-                  {message.role === "user" ? "You" : "DocuScope"}
+                  {message.role === "user" ? "You" : "AskMyPDF AI"}
                 </div>
                 <div className="message__body">
                   {message.role === "assistant" ? (
@@ -346,7 +346,7 @@ export function ChatClient() {
 
             {loading && (
               <div className="message message--assistant">
-                <div className="message__meta">DocuScope</div>
+                <div className="message__meta">AskMyPDF AI</div>
                 <div className="message__body">
                   <div className="searching-state">
                     <span /><span /><span />

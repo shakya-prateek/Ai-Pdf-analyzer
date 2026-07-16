@@ -36,7 +36,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="res-app">
       <aside className="res-sidebar" aria-label="Primary navigation">
         <div className="res-sidebar__top">
-          <Link href="/" className="res-logo" aria-label="PDF Analyzer home">
+          <Link href="/" className="res-logo" aria-label="AskMyPDF AI home">
             <span><BrandIcon className="h-6 w-6" /></span>
           </Link>
           <button type="button" className="res-collapse" aria-label="Collapse sidebar">
@@ -76,7 +76,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main className="res-main">
         <header className="res-topbar">
           <div>
-            <strong>PDF Analyzer</strong>
+            <strong>AskMyPDF AI</strong>
             <span>AI workspace for documents, writing, and study</span>
           </div>
           <Link href="/documents" className="res-create">

@@ -1,4 +1,4 @@
-# Document Intelligence + Agentic RAG
+# AskMyPDF AI
 
 A local-first full-stack application for turning mixed document collections into searchable, page-level evidence. It accepts digital PDFs, scanned PDFs, images, and text files; extracts text and tables; classifies each document; indexes page chunks; and answers questions with citations that open the exact rendered source page.
 
@@ -6,7 +6,7 @@ The project works without a paid API. When Gemini or Groq is not configured, det
 
 ## Quick Start
 
-The repository root is dedicated to the PDF analyzer. Complete the one-time setup first:
+The repository root is dedicated to AskMyPDF AI. Complete the one-time setup first:
 
 ```bash
 cd backend
