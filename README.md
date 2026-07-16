@@ -156,12 +156,13 @@ Backend, from `backend/.env.example`:
 | `MAX_UPLOAD_MB` | `10` | Per-file upload limit |
 | `MAX_FILES_PER_UPLOAD` | `20` | Files allowed in one request |
 | `MAX_PDF_PAGES` | `50` | PDF page limit |
+| `PDF_RENDER_DPI` | `96` | PDF preview render quality; lower values process faster |
 | `MAX_IMAGE_PIXELS` | `40000000` | Image decompression safety limit |
 | `STORAGE_DIR` | `./storage` | Private originals and page images |
 | `CHROMA_DIR` | `./storage/chroma` | Persistent Chroma directory |
 | `RETRIEVAL_SCORE_THRESHOLD` | `0.18` | Minimum semantic similarity |
 | `EMBEDDING_MODEL` | `all-MiniLM-L6-v2` | sentence-transformers model |
-| `ENABLE_SEMANTIC_SEARCH` | `true` | Enable Chroma semantic retrieval |
+| `ENABLE_SEMANTIC_SEARCH` | `false` | Enable Chroma semantic retrieval; lexical search is faster for small demos |
 | `EMBEDDING_LOCAL_ONLY` | `true` | Avoid network downloads at runtime |
 | `SINGLE_USER_MODE` | `true` | Open directly into one private local workspace |
 | `WORKSPACE_ACCESS_TOKENS` | empty | Optional keys when single-user mode is disabled |

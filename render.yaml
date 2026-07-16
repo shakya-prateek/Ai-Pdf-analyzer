@@ -20,8 +20,12 @@ services:
         value: /tmp/docuscope/storage
       - key: CHROMA_DIR
         value: /tmp/docuscope/storage/chroma
+      - key: MAX_PDF_PAGES
+        value: "25"
+      - key: PDF_RENDER_DPI
+        value: "96"
       - key: ENABLE_SEMANTIC_SEARCH
-        value: "true"
+        value: "false"
       - key: SINGLE_USER_MODE
         value: "true"
       - key: WORKSPACE_ACCESS_TOKENS

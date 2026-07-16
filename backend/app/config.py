@@ -22,6 +22,7 @@ class Settings:
     max_upload_mb: int
     max_files_per_upload: int
     max_pdf_pages: int
+    pdf_render_dpi: int
     max_image_pixels: int
     chroma_dir: Path
     storage_dir: Path
@@ -81,12 +82,13 @@ def get_settings() -> Settings:
         max_upload_mb=int(os.getenv("MAX_UPLOAD_MB", "10")),
         max_files_per_upload=int(os.getenv("MAX_FILES_PER_UPLOAD", "20")),
         max_pdf_pages=int(os.getenv("MAX_PDF_PAGES", "50")),
+        pdf_render_dpi=int(os.getenv("PDF_RENDER_DPI", "96")),
         max_image_pixels=int(os.getenv("MAX_IMAGE_PIXELS", "40000000")),
         chroma_dir=chroma_dir,
         storage_dir=storage_dir,
         retrieval_threshold=float(os.getenv("RETRIEVAL_SCORE_THRESHOLD", "0.18")),
         embedding_model=os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2"),
-        enable_semantic_search=_as_bool(os.getenv("ENABLE_SEMANTIC_SEARCH", "true"), True),
+        enable_semantic_search=_as_bool(os.getenv("ENABLE_SEMANTIC_SEARCH", "false"), False),
         embedding_local_only=_as_bool(os.getenv("EMBEDDING_LOCAL_ONLY", "true"), True),
         workspace_access_tokens=access_tokens,
         single_user_mode=_as_bool(os.getenv("SINGLE_USER_MODE", "true"), True),

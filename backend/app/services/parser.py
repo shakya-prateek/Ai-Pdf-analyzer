@@ -78,7 +78,7 @@ def _parse_pdf(file_path: Path, pages_dir: Path) -> list[dict[str, Any]]:
 
         for index, page in enumerate(pdf.pages):
             page_number = index + 1
-            image = _render_pdf_page(file_path, page_number)
+            image = _render_pdf_page(file_path, page_number, settings.pdf_render_dpi)
             image_path = pages_dir / f"page_{page_number}.png"
             _save_page_image(image, image_path)
 
@@ -108,13 +108,34 @@ def _parse_pdf(file_path: Path, pages_dir: Path) -> list[dict[str, Any]]:
     return records
 
 
-def _render_pdf_page(file_path: Path, page_number: int) -> Image.Image:
+def _render_pdf_page(
+    file_path: Path,
+    page_number: int,
+    dpi: int | None = None,
+) -> Image.Image:
+    if dpi is None:
+        dpi = get_settings().pdf_render_dpi
+    dpi = max(72, min(dpi, 150))
+    try:
+        import pypdfium2 as pdfium
+
+        document = pdfium.PdfDocument(str(file_path))
+        page = document[page_number - 1]
+        bitmap = page.render(scale=dpi / 72)
+        image = bitmap.to_pil().convert("RGB")
+        bitmap.close()
+        page.close()
+        document.close()
+        return image
+    except Exception:
+        pass
+
     try:
         from pdf2image import convert_from_path
 
         rendered = convert_from_path(
             str(file_path),
-            dpi=150,
+            dpi=dpi,
             first_page=page_number,
             last_page=page_number,
             fmt="png",
@@ -122,20 +143,6 @@ def _render_pdf_page(file_path: Path, page_number: int) -> Image.Image:
         )
         if rendered:
             return rendered[0]
-    except Exception:
-        pass
-
-    try:
-        import pypdfium2 as pdfium
-
-        document = pdfium.PdfDocument(str(file_path))
-        page = document[page_number - 1]
-        bitmap = page.render(scale=150 / 72)
-        image = bitmap.to_pil().convert("RGB")
-        bitmap.close()
-        page.close()
-        document.close()
-        return image
     except Exception as exc:
         raise ValueError(f"Unable to render PDF page {page_number}") from exc
 
