@@ -54,11 +54,11 @@ app.add_middleware(
 )
 
 ALLOWED_TYPES = {
-    "pdf": {"application/pdf"},
-    "png": {"image/png"},
-    "jpg": {"image/jpeg"},
-    "jpeg": {"image/jpeg"},
-    "txt": {"text/plain", "application/octet-stream", "text/csv"},
+    "pdf": {"application/pdf", "application/octet-stream", ""},
+    "png": {"image/png", "application/octet-stream", ""},
+    "jpg": {"image/jpeg", "application/octet-stream", ""},
+    "jpeg": {"image/jpeg", "application/octet-stream", ""},
+    "txt": {"text/plain", "application/octet-stream", "text/csv", ""},
 }
 request_times: dict[str, deque[float]] = defaultdict(deque)
 
