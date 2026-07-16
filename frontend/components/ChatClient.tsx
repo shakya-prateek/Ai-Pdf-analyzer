@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch, Citation, DocumentRecord } from "@/lib/api";
 import { CitationCards } from "./CitationCards";
 import {
@@ -31,9 +31,9 @@ type SpeechRecognitionType = {
 };
 
 const suggestions = [
-  "Summarize my uploaded documents.",
-  "How many documents are uploaded?",
-  "List the important dates and deadlines."
+  "Create an executive summary.",
+  "Extract strengths, risks, and gaps.",
+  "How many documents are uploaded?"
 ];
 
 function InlineAnswer({ text }: { text: string }) {
@@ -55,7 +55,7 @@ function AnswerText({ text }: { text: string }) {
       {text.split("\n").map((rawLine, index) => {
         const line = rawLine.trim();
         if (!line) return <span key={index} className="answer-spacer" />;
-        const heading = line.match(/^\*\*(.+)\*\*$/);
+        const heading = line.match(/^(?:#{2,3}\s+|\*\*)(.+?)(?:\*\*)?$/);
         if (heading) {
           return <h4 key={index}><InlineAnswer text={heading[1]} /></h4>;
         }
@@ -87,31 +87,37 @@ export function ChatClient() {
   const recognitionRef = useRef<SpeechRecognitionType | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
+  const loadOverview = useCallback(async (active = true) => {
+    try {
+      const [data, capabilities] = await Promise.all([
+        apiFetch<{ documents: DocumentRecord[] }>("/api/documents"),
+        apiFetch<{ ai_enabled: boolean; provider: string }>("/api/capabilities")
+      ]);
+      if (!active) return;
+      setBackendOnline(true);
+      setIndexedCount(data.documents.filter((document) => document.status === "indexed").length);
+      setAiProvider(
+        capabilities.ai_enabled
+          ? `${capabilities.provider.charAt(0).toUpperCase()}${capabilities.provider.slice(1)} AI`
+          : "Local fallback"
+      );
+    } catch {
+      if (!active) return;
+      setBackendOnline(false);
+      setIndexedCount(null);
+      setAiProvider("Offline");
+    }
+  }, []);
+
   useEffect(() => {
     let active = true;
-    Promise.all([
-      apiFetch<{ documents: DocumentRecord[] }>("/api/documents"),
-      apiFetch<{ ai_enabled: boolean; provider: string }>("/api/capabilities")
-    ])
-      .then(([data, capabilities]) => {
-        if (!active) return;
-        setBackendOnline(true);
-        setIndexedCount(data.documents.filter((document) => document.status === "indexed").length);
-        setAiProvider(
-          capabilities.ai_enabled
-            ? `${capabilities.provider.charAt(0).toUpperCase()}${capabilities.provider.slice(1)} AI`
-            : "Local fallback"
-        );
-      })
-      .catch(() => {
-        if (!active) return;
-        setBackendOnline(false);
-        setIndexedCount(null);
-      });
+    void loadOverview(active);
+    const timer = window.setInterval(() => void loadOverview(active), 5000);
     return () => {
       active = false;
+      window.clearInterval(timer);
     };
-  }, []);
+  }, [loadOverview]);
 
   useEffect(() => {
     if (messages.length || loading) {
@@ -162,6 +168,7 @@ export function ChatClient() {
     }
     if (!indexedCount) {
       setError("Upload and finish indexing at least one document before asking a question.");
+      void loadOverview();
       return;
     }
     const cleanQuestion = question.trim();
@@ -196,10 +203,10 @@ export function ChatClient() {
     <main className="workspace-shell">
       <aside className="workspace-sidebar">
         <div>
-          <p className="eyebrow">Workspace status</p>
-          <h1 className="mt-2 text-xl font-semibold tracking-tight text-slate-950">Knowledge base</h1>
+          <p className="eyebrow">Library overview</p>
+          <h1 className="mt-2 text-xl font-semibold tracking-tight text-slate-950">Source set</h1>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            Answers are generated only from indexed document pages.
+            Ask grounded questions across documents that have completed indexing.
           </p>
         </div>
 
@@ -224,9 +231,9 @@ export function ChatClient() {
         <div className="sidebar-section">
           <p className="sidebar-label">Answer safeguards</p>
           {[
-            "Page-level source citations",
-            "Retrieval relevance threshold",
-            "No-answer protection"
+            "Grounded answers only",
+            "Page-level citations",
+            "Private local storage"
           ].map((item) => (
             <div key={item} className="sidebar-check">
               <span><CheckIcon className="h-3.5 w-3.5" /></span>
@@ -245,8 +252,8 @@ export function ChatClient() {
         <div className="page-heading">
           <div>
             <p className="eyebrow">Document Q&amp;A</p>
-            <h2>Ask questions across your files</h2>
-            <p>Responses include exact page references and source previews.</p>
+            <h2>Analyze your source documents</h2>
+            <p>Professional answers with page references and source previews.</p>
           </div>
           {messages.length > 0 && (
             <button
@@ -267,8 +274,8 @@ export function ChatClient() {
             <div className="flex items-center gap-3">
               <span className="panel-icon"><MessageIcon className="h-4 w-4" /></span>
               <div>
-                <h3>Research assistant</h3>
-                <p>Grounded in your indexed library</p>
+                <h3>Document analyst</h3>
+                <p>Evidence-backed responses from indexed pages</p>
               </div>
             </div>
             <span className="secure-label">{aiProvider} · Citations on</span>
@@ -282,8 +289,8 @@ export function ChatClient() {
                   <>
                     <h3>Upload a document to start</h3>
                     <p>
-                      Your private library is empty. Once a document is indexed, you can ask
-                      questions and open cited source pages here.
+                      Upload a PDF, image, or text file. Once indexing finishes, answers
+                      and citations will appear here.
                     </p>
                     <Link href="/upload" className="primary-button">
                       <FilesIcon className="h-4 w-4" />
@@ -295,7 +302,7 @@ export function ChatClient() {
                     <h3>{backendOnline ? "What would you like to find?" : "Document service unavailable"}</h3>
                     <p>
                       {backendOnline
-                        ? "Ask a focused question, or use one of these examples to get started."
+                        ? "Ask a question, request a summary, or extract key details."
                         : "Start both services from the project root with npm run dev."}
                     </p>
                     {backendOnline && (
