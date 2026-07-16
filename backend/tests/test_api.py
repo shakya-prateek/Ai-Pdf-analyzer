@@ -129,6 +129,14 @@ async def test_upload_index_chat_and_page_image(client: AsyncClient):
     assert "[sample_invoice.txt, page 1]" in summary.json()["answer"]
     assert len(summary.json()["citations"]) == 1
 
+    executive_summary = await client.post(
+        "/api/chat",
+        headers=HEADERS_A,
+        json={"message": "Create an executive summary of the uploaded document.", "history": []},
+    )
+    assert "sample_invoice.txt:" in executive_summary.json()["answer"]
+    assert "[sample_invoice.txt, page 1]" in executive_summary.json()["answer"]
+
     private_page = await client.get(payload["citations"][0]["page_image_url"])
     assert private_page.status_code == 401
 
@@ -149,6 +157,56 @@ async def test_upload_index_chat_and_page_image(client: AsyncClient):
 
     with connect() as connection:
         assert connection.execute("SELECT COUNT(*) AS count FROM chat_logs").fetchone()["count"] == 0
+
+
+@pytest.mark.anyio
+async def test_resume_section_questions_return_actual_section(client: AsyncClient):
+    resume = (
+        "Prateek Shakya\n"
+        "PROFESSIONAL SUMMARY\n"
+        "Data science student focused on predictive modeling.\n"
+        "TECHNICAL SKILLS\n"
+        "Languages: Python, SQL, JavaScript\n"
+        "Machine Learning: Scikit-learn, Logistic Regression, Random Forest\n"
+        "Data Visualization: Tableau, Power BI\n"
+        "PROJECTS\n"
+        "Hotel Booking Cancellation Analysis [GitHub]\n"
+        "Built a data science project using Python, Pandas, and Scikit-learn.\n"
+        "FlightOps Dashboard — US Flight Delay Analysis [GitHub]\n"
+        "Created Tableau dashboards for delay patterns and route performance.\n"
+        "CERTIFICATIONS & HACKATHONS\n"
+        "Deloitte Australia Data Analytics Job Simulation\n"
+    )
+    upload = await client.post(
+        "/api/upload",
+        headers=HEADERS_A,
+        files={"files": ("resume.txt", resume, "text/plain")},
+    )
+    assert upload.status_code == 202
+
+    skills = await client.post(
+        "/api/chat",
+        headers=HEADERS_A,
+        json={"message": "What skills are mentioned in the uploaded resume?", "history": []},
+    )
+    payload = skills.json()
+    assert skills.status_code == 200
+    assert "Technical skills:" in payload["answer"]
+    assert "Python, SQL, JavaScript" in payload["answer"]
+    assert "Scikit-learn" in payload["answer"]
+    assert "[resume.txt, page 1]" in payload["answer"]
+
+    projects = await client.post(
+        "/api/chat",
+        headers=HEADERS_A,
+        json={"message": "project in my resume ds", "history": []},
+    )
+    project_payload = projects.json()
+    assert projects.status_code == 200
+    assert "Projects:" in project_payload["answer"]
+    assert "Hotel Booking Cancellation Analysis" in project_payload["answer"]
+    assert "FlightOps Dashboard" in project_payload["answer"]
+    assert "[resume.txt, page 1]" in project_payload["answer"]
 
 
 @pytest.mark.anyio
@@ -173,6 +231,19 @@ async def test_rejects_empty_unsupported_and_spoofed_files(client: AsyncClient):
         files={"files": ("fake.pdf", b"not a pdf", "application/pdf")},
     )
     assert spoofed.status_code == 415
+
+    octet_stream_pdf = await client.post(
+        "/api/upload",
+        headers=HEADERS_A,
+        files={
+            "files": (
+                "minimal.pdf",
+                b"%PDF-1.4\n%test\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF",
+                "application/octet-stream",
+            )
+        },
+    )
+    assert octet_stream_pdf.status_code == 202
 
 
 @pytest.mark.anyio
