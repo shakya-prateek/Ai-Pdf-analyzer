@@ -116,7 +116,7 @@ export function AiToolClient({
   };
 
   return (
-    <section className="res-page tool-workspace">
+    <section className={chatMode ? "res-page tool-workspace tool-workspace--chat" : "res-page tool-workspace"}>
       <div className="tool-heading">
         <h1>{title}</h1>
         <p>{subtitle}</p>
@@ -149,8 +149,8 @@ export function AiToolClient({
             {messages.length === 0 ? (
               <div className="simple-empty">
                 <MessageIcon className="h-8 w-8" />
-                <h2>Welcome to Chat AI</h2>
-                <p>Ask for writing help, planning, explanations, or quick summaries.</p>
+                <h2>Ready to help</h2>
+                <p>Ask about your uploaded files, writing, planning, or quick summaries.</p>
               </div>
             ) : (
               messages.map((message, index) => (
@@ -224,6 +224,7 @@ function DocumentContextBar({
 }) {
   const readyCount = indexed.length;
   const names = indexed.slice(0, 3).map((document) => document.original_name).join(", ");
+  const fileLabel = readyCount === 1 ? "1 file ready for AI" : `${readyCount} files ready for AI`;
   return (
     <div className={readyCount ? "document-context document-context--ready" : "document-context"}>
       <span className="document-context__icon"><FilesIcon className="h-4 w-4" /></span>
@@ -232,16 +233,16 @@ function DocumentContextBar({
           {loading
             ? "Checking document library"
             : readyCount
-              ? `${readyCount} indexed document${readyCount === 1 ? "" : "s"} connected`
-              : "No indexed documents connected"}
+              ? fileLabel
+              : "No files ready yet"}
         </strong>
         <p>
           {loading
             ? "Uploaded documents will be available across Chats, Humanizer, Study, Healthcare, and other tools."
             : readyCount
-              ? `Available here: ${names}${readyCount > 3 ? `, and ${readyCount - 3} more` : ""}.`
+              ? `Using: ${names}${readyCount > 3 ? `, and ${readyCount - 3} more` : ""}.`
               : total
-                ? "Documents are still processing. Once indexed, every AI tool can use them."
+                ? "Files are still processing. They will appear here when ready."
                 : "Upload files from Documents to use them across every AI tool."}
         </p>
       </div>
@@ -269,6 +270,12 @@ function ToolComposer({
       <textarea
         value={text}
         onChange={(event) => setText(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            event.currentTarget.form?.requestSubmit();
+          }
+        }}
         placeholder={placeholder}
         rows={1}
       />

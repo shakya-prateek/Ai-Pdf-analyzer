@@ -2243,6 +2243,31 @@ body {
   max-width: 1300px;
 }
 
+.tool-workspace--chat {
+  display: flex;
+  min-height: calc(100vh - 78px);
+  flex-direction: column;
+  padding-top: 28px;
+  padding-bottom: 26px;
+}
+
+.tool-workspace--chat .tool-heading {
+  margin: 8px auto 18px;
+}
+
+.tool-workspace--chat .tool-heading h1 {
+  font-size: clamp(32px, 4vw, 52px);
+}
+
+.tool-workspace--chat .tool-heading p {
+  margin-top: 8px;
+  font-size: 16px;
+}
+
+.tool-workspace--chat .document-context {
+  margin-bottom: 16px;
+}
+
 .tool-heading {
   margin: 18px auto 28px;
   text-align: center;
@@ -2423,8 +2448,9 @@ body {
 .simple-chat {
   display: flex;
   width: min(980px, 100%);
-  min-height: calc(100vh - 290px);
+  min-height: 0;
   margin: 0 auto;
+  flex: 1;
   flex-direction: column;
 }
 
@@ -2432,29 +2458,32 @@ body {
   display: flex;
   flex: 1;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-end;
   gap: 16px;
-  padding: 26px 0;
+  min-height: 260px;
+  overflow-y: auto;
+  padding: 14px 0 22px;
 }
 
 .simple-empty {
+  margin: auto 0;
   text-align: center;
 }
 
 .simple-empty svg {
-  margin: 0 auto 18px;
+  margin: 0 auto 12px;
   color: #2563eb;
 }
 
 .simple-empty h2 {
   color: #111827;
-  font-size: 34px;
+  font-size: 28px;
   font-weight: 500;
   letter-spacing: -0.04em;
 }
 
 .simple-empty p {
-  margin-top: 10px;
+  margin-top: 8px;
   color: #667085;
 }
 
@@ -2487,6 +2516,7 @@ body {
   display: flex;
   align-items: center;
   gap: 14px;
+  flex-shrink: 0;
   padding: 10px 12px 10px 22px;
   border: 1px solid #e1e7ef;
   border-radius: 999px;

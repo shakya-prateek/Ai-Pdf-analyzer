@@ -134,11 +134,11 @@ def _document_count_answer(payload: ToolRequest, documents: list[dict[str, str]]
         return None
     count = len(documents)
     if count == 0:
-        return "You have no indexed documents in this workspace yet. Upload a document from the Documents page first."
+        return "You do not have any files ready for AI yet. Upload a document from the Documents page first."
     names = ", ".join(item["name"] for item in documents[:5])
     suffix = "" if count <= 5 else f", and {count - 5} more"
-    noun = "document" if count == 1 else "documents"
-    return f"You have {count} indexed {noun}: {names}{suffix}."
+    noun = "file" if count == 1 else "files"
+    return f"You have {count} {noun} ready for AI: {names}{suffix}."
 
 
 def _remote_generate(

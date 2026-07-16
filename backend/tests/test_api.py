@@ -151,7 +151,7 @@ async def test_upload_index_chat_and_page_image(client: AsyncClient):
         },
     )
     assert shared_tool_count.status_code == 200
-    assert shared_tool_count.json()["result"] == "You have 1 indexed document: sample_invoice.txt."
+    assert shared_tool_count.json()["result"] == "You have 1 file ready for AI: sample_invoice.txt."
 
     summary = await client.post(
         "/api/chat",
