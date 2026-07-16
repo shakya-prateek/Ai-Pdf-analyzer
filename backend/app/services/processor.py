@@ -25,6 +25,14 @@ def process_document(doc_id: str) -> None:
 
         _status(doc_id, "parsing")
         pages = parse_document(file_path, document["file_type"], doc_id)
+        readable_pages = [
+            page for page in pages
+            if page["text"].strip() or page.get("tables")
+        ]
+        if not readable_pages:
+            raise ValueError(
+                "No readable text was found. Upload a searchable PDF, TXT file, or a clearer scan."
+            )
         with connect() as connection:
             connection.execute("DELETE FROM pages WHERE doc_id = ?", (doc_id,))
             for page in pages:
