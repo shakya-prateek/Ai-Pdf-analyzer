@@ -24,8 +24,9 @@ npm run dev
 ```
 
 This starts FastAPI at `http://localhost:8000` and Next.js at
-`http://localhost:3000`. Open the frontend, upload a document, and start asking
-questions. Local mode requires no account or access key.
+`http://localhost:3000`. Open the frontend, choose a tool from the dashboard,
+upload a document, and start asking questions. Local mode requires no account or
+access key.
 
 ## Features
 
@@ -45,14 +46,23 @@ questions. Local mode requires no account or access key.
 - Citation thumbnails and full-page image modal
 - Live upload status polling and classification summaries
 - Browser Web Speech API voice input
+- No-login dashboard with Documents, Investigator, Chat, Humanizer,
+  Paraphraser, Study, and Images prompt tools
+- General AI tools powered by Gemini, Groq, or deterministic local fallback
 - Exact no-answer behavior for unrelated questions
 
 ## Architecture
 
 ```text
 Next.js + TypeScript
-  |-- /                    Chat, citations, voice input
-  |-- /upload              Bulk upload and status polling
+  |-- /                    Tool dashboard
+  |-- /documents           Bulk upload and status polling
+  |-- /investigator        PDF chat, citations, voice input
+  |-- /chats               General AI assistant
+  |-- /humanizer           Human tone rewrite
+  |-- /paraphraser         Rewrite, correct, translate
+  |-- /study               Quizzes, flashcards, mind maps
+  |-- /images              Image prompt studio
   |
   v
 FastAPI
@@ -121,7 +131,8 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open `http://localhost:3000`. Upload documents at `/upload` and ask questions at `/`.
+Open `http://localhost:3000`. Upload documents at `/documents` and ask
+document-grounded questions at `/investigator`.
 
 ## Sample Documents
 
@@ -189,6 +200,7 @@ Do not commit `.env` or `.env.local` files.
 | `GET` | `/api/documents/{doc_id}/status` | Poll processing status |
 | `GET` | `/api/documents/{doc_id}/pages/{page_number}` | Serve a protected page image |
 | `POST` | `/api/chat` | Ask a grounded question with history |
+| `POST` | `/api/tools/generate` | Generate text for chat, humanizer, paraphraser, study, and image prompt tools |
 | `DELETE` | `/api/chat/history` | Clear persisted workspace chat history |
 | `DELETE` | `/api/documents/{doc_id}` | Permanently delete a workspace document |
 

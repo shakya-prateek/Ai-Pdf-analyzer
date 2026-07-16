@@ -25,6 +25,31 @@ class ChatResponse(BaseModel):
     citations: list[Citation]
 
 
+class ToolRequest(BaseModel):
+    tool: Literal[
+        "chat",
+        "humanize",
+        "verify_ai",
+        "paraphrase",
+        "correct",
+        "translate",
+        "quiz",
+        "flashcards",
+        "mind_map",
+        "image_prompt",
+        "document_draft",
+    ]
+    text: str = Field(min_length=1, max_length=12000)
+    mode: str | None = Field(default=None, max_length=80)
+    target_language: str | None = Field(default=None, max_length=80)
+    history: list[HistoryMessage] = Field(default_factory=list, max_length=12)
+
+
+class ToolResponse(BaseModel):
+    result: str
+    provider: str
+
+
 class ContentCharacteristics(BaseModel):
     has_tables: bool
     has_handwriting: bool

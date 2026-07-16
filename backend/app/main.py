@@ -23,10 +23,11 @@ from fastapi.responses import FileResponse, JSONResponse
 from .auth import require_workspace
 from .config import get_settings
 from .database import connect, init_db, now_iso, row_to_document
-from .schemas import ChatRequest, ChatResponse
+from .schemas import ChatRequest, ChatResponse, ToolRequest, ToolResponse
 from .services.processor import process_document
 from .services.rag import answer_question
 from .services.documents import DocumentProcessingError, delete_document
+from .services.tools import generate_tool_response
 
 
 settings = get_settings()
@@ -65,7 +66,7 @@ request_times: dict[str, deque[float]] = defaultdict(deque)
 
 @app.middleware("http")
 async def rate_limit(request: Request, call_next):
-    if request.url.path in {"/api/upload", "/api/chat"}:
+    if request.url.path in {"/api/upload", "/api/chat", "/api/tools/generate"}:
         client = request.client.host if request.client else "unknown"
         now = time.monotonic()
         bucket = request_times[client]
@@ -305,6 +306,15 @@ def chat(
         [{"role": item.role, "content": item.content} for item in payload.history],
         owner_id,
     )
+
+
+@app.post("/api/tools/generate", response_model=ToolResponse)
+def generate_tool(
+    payload: ToolRequest,
+    owner_id: Annotated[str, Depends(require_workspace)],
+):
+    del owner_id
+    return generate_tool_response(payload)
 
 
 @app.delete("/api/chat/history", status_code=204)

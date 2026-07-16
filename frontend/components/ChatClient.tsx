@@ -242,7 +242,7 @@ export function ChatClient() {
           ))}
         </div>
 
-        <Link href="/upload" className="secondary-button mt-auto">
+        <Link href="/documents" className="secondary-button mt-auto">
           <FilesIcon className="h-4 w-4" />
           Manage documents
         </Link>
@@ -292,7 +292,7 @@ export function ChatClient() {
                       Upload a PDF, image, or text file. Once indexing finishes, answers
                       and citations will appear here.
                     </p>
-                    <Link href="/upload" className="primary-button">
+                    <Link href="/documents" className="primary-button">
                       <FilesIcon className="h-4 w-4" />
                       Upload documents
                     </Link>

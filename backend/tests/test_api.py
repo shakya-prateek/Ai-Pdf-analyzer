@@ -67,6 +67,15 @@ async def test_health_and_empty_library(client: AsyncClient):
     assert documents.status_code == 200
     assert documents.json() == {"documents": []}
 
+    tool = await client.post(
+        "/api/tools/generate",
+        headers=HEADERS_A,
+        json={"tool": "paraphrase", "text": "This project analyzes uploaded PDF files."},
+    )
+    assert tool.status_code == 200
+    assert tool.json()["provider"] == "local:fallback"
+    assert "project" in tool.json()["result"].lower()
+
 
 @pytest.mark.anyio
 async def test_upload_index_chat_and_page_image(client: AsyncClient):

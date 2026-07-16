@@ -177,7 +177,7 @@ export function UploadClient() {
           <h1>Build your document library</h1>
           <p>Upload files, monitor indexing, and remove sources you no longer need.</p>
         </div>
-        <Link href="/" className="secondary-button">
+        <Link href="/investigator" className="secondary-button">
           <MessageIcon className="h-4 w-4" />
           Ask documents
         </Link>
