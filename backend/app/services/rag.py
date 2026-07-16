@@ -15,6 +15,8 @@ WORD_PATTERN = re.compile(r"[a-zA-Z0-9][a-zA-Z0-9_-]+")
 QUESTION_STOP_WORDS = {
     "about", "and", "are", "does", "for", "from", "how", "into", "is", "of",
     "on", "the", "to", "was", "what", "when", "where", "which", "who", "with",
+    "do", "you", "your", "uploaded", "document", "documents", "file", "files",
+    "pdf", "pdfs",
 }
 
 
@@ -90,7 +92,7 @@ def _remote_answer(
                 data=json.dumps({"contents": [{"parts": [{"text": prompt}]}]}).encode(),
                 headers={"Content-Type": "application/json"},
             )
-            data = load_json(request)
+            data = load_json(request, timeout=20, retries=0)
             return data["candidates"][0]["content"]["parts"][0]["text"].strip()
         if settings.llm_provider == "groq" and settings.groq_api_key:
             payload = {
@@ -107,7 +109,7 @@ def _remote_answer(
                     "Authorization": f"Bearer {settings.groq_api_key}",
                 },
             )
-            data = load_json(request)
+            data = load_json(request, timeout=20, retries=0)
             return data["choices"][0]["message"]["content"].strip()
     except Exception:
         return None
@@ -135,6 +137,158 @@ def _evidence_units(text: str) -> list[str]:
         split = re.split(r"(?<=[.!?])\s+", clean_line)
         units.extend(part.strip() for part in split if len(part.strip()) >= 8)
     return units or [re.sub(r"\s+", " ", text).strip()]
+
+
+def _extract_section(text: str, headings: tuple[str, ...]) -> str:
+    lines = [
+        re.sub(r"\s+", " ", line).strip(" -\t")
+        for line in text.splitlines()
+        if re.sub(r"\s+", " ", line).strip(" -\t")
+    ]
+    wanted = {heading.lower() for heading in headings}
+    heading_pattern = re.compile(r"^[A-Z][A-Z &/+-]{3,}$")
+    start = -1
+    for index, line in enumerate(lines):
+        if line.lower() in wanted:
+            start = index + 1
+            break
+    if start < 0:
+        return ""
+    collected = []
+    for line in lines[start:]:
+        if heading_pattern.match(line) and line.lower() not in wanted:
+            break
+        collected.append(line)
+    return " ".join(collected).strip()
+
+
+def _extract_section_lines(text: str, headings: tuple[str, ...]) -> list[str]:
+    lines = [
+        re.sub(r"\s+", " ", line).strip(" -\t")
+        for line in text.splitlines()
+        if re.sub(r"\s+", " ", line).strip(" -\t")
+    ]
+    wanted = {heading.lower() for heading in headings}
+    heading_pattern = re.compile(r"^[A-Z][A-Z &/+-]{3,}$")
+    start = -1
+    for index, line in enumerate(lines):
+        if line.lower() in wanted:
+            start = index + 1
+            break
+    if start < 0:
+        return []
+    collected = []
+    for line in lines[start:]:
+        if heading_pattern.match(line) and line.lower() not in wanted:
+            break
+        collected.append(line)
+    return collected
+
+
+def _clean_extracted_text(text: str) -> str:
+    return (
+        text.replace("(cid:127)", "")
+        .replace("  ", " ")
+        .strip(" -")
+    )
+
+
+def _format_project_section(
+    lines: list[str],
+    citation: str,
+) -> str:
+    entries: list[str] = []
+    current: list[str] = []
+    for line in lines:
+        starts_project = bool(re.search(r"\[(?:GitHub|Live Demo)", line))
+        if starts_project and current:
+            entries.append(_clean_extracted_text(" ".join(current)))
+            current = [line]
+        else:
+            current.append(line)
+    if current:
+        entries.append(_clean_extracted_text(" ".join(current)))
+    trimmed_entries = []
+    for entry in entries:
+        if not entry:
+            continue
+        if len(entry) > 900:
+            clipped = entry[:900]
+            sentence_boundary = clipped.rfind(". ")
+            if sentence_boundary > 320:
+                entry = clipped[:sentence_boundary + 1]
+            else:
+                entry = f"{clipped.rsplit(' ', 1)[0]}..."
+        trimmed_entries.append(entry.rstrip(" ,;"))
+    entries = trimmed_entries
+    if not entries:
+        return ""
+    bullets = "\n".join(f"- {entry} {citation}" for entry in entries[:5])
+    return f"Projects:\n{bullets}"
+
+
+def _section_answer(
+    question: str,
+    matches: list[dict[str, Any]],
+) -> tuple[str, list[dict[str, Any]]] | None:
+    normalized = question.lower()
+    section_headings: tuple[str, ...] | None = None
+    title = ""
+    if re.search(r"\bskills?\b|\btechnologies?\b|\btools?\b", normalized):
+        section_headings = ("TECHNICAL SKILLS",)
+        title = "Technical skills"
+    elif re.search(r"\beducation\b|\bdegree\b|\bcgpa\b", normalized):
+        section_headings = ("EDUCATION",)
+        title = "Education"
+    elif re.search(r"\bexperience\b|\bintern(?:ship)?\b|\bwork\b", normalized):
+        section_headings = ("EXPERIENCE",)
+        title = "Experience"
+    elif re.search(r"\bprojects?\b", normalized):
+        section_headings = ("PROJECTS",)
+        title = "Projects"
+    elif re.search(r"\bcertifications?\b|\bhackathons?\b", normalized):
+        section_headings = ("CERTIFICATIONS & HACKATHONS",)
+        title = "Certifications and hackathons"
+    if not section_headings:
+        return None
+
+    for item in matches:
+        metadata = item["metadata"]
+        source_text = item["text"]
+        with connect() as connection:
+            page = connection.execute(
+                """SELECT text FROM pages
+                   WHERE doc_id = ? AND page_number = ?""",
+                (metadata["doc_id"], int(metadata["page_number"])),
+            ).fetchone()
+        if page and page["text"]:
+            source_text = page["text"]
+        raw_section_lines = _extract_section_lines(source_text, section_headings)
+        section = " ".join(raw_section_lines).strip()
+        if not section:
+            continue
+        excerpt = section[:1100].rstrip()
+        citation = f"[{metadata['document_name']}, page {metadata['page_number']}]"
+        if title == "Projects":
+            answer = _format_project_section(raw_section_lines, citation)
+            if answer:
+                return answer, [{**item, "quoted_text": _clean_extracted_text(excerpt)[:240]}]
+        category_pattern = (
+            r"(?=\b(?:Languages|Data Analysis & EDA|Machine Learning|"
+            r"Data Visualization|Databases|Tools|Concepts):\s)"
+        )
+        section_lines = [
+            _clean_extracted_text(line)
+            for line in re.split(category_pattern, excerpt)
+            if line.strip()
+        ]
+        if len(section_lines) > 1:
+            bullets = "\n".join(f"- {line} {citation}" for line in section_lines[:8])
+            answer = f"{title}:\n{bullets}"
+        else:
+            answer = f"{title}: {excerpt} {citation}"
+        return answer, [{**item, "quoted_text": excerpt[:240]}]
+    return None
 
 
 def _best_evidence(question: str, text: str) -> tuple[str, float]:
@@ -171,6 +325,10 @@ def _best_evidence(question: str, text: str) -> tuple[str, float]:
 def _mock_answer(
     question: str, matches: list[dict[str, Any]]
 ) -> tuple[str, list[dict[str, Any]]]:
+    section_answer = _section_answer(question, matches)
+    if section_answer is not None:
+        return section_answer
+
     ranked = []
     for item in matches:
         excerpt, evidence_score = _best_evidence(question, item["text"])
@@ -263,6 +421,57 @@ def _grounded_remote_answer(
     return answer, sources
 
 
+def _has_question_overlap(question: str, matches: list[dict[str, Any]]) -> bool:
+    query_tokens = _question_tokens(question)
+    if not query_tokens:
+        return True
+    for item in matches:
+        text_tokens = {
+            token.lower()
+            for token in WORD_PATTERN.findall(item["text"])
+            if len(token) > 2
+        }
+        if query_tokens & text_tokens:
+            return True
+    return False
+
+
+def _section_answer_from_library(
+    question: str,
+    owner_id: str,
+) -> dict[str, Any] | None:
+    with connect() as connection:
+        rows = connection.execute(
+            """SELECT d.id, d.original_name, p.page_number, p.text
+               FROM documents d
+               JOIN pages p ON p.doc_id = d.id
+               WHERE d.owner_id = ? AND d.status = 'indexed'
+               ORDER BY d.created_at DESC, p.page_number ASC""",
+            (owner_id,),
+        ).fetchall()
+    matches = [
+        {
+            "text": row["text"],
+            "score": 1.0,
+            "metadata": {
+                "doc_id": row["id"],
+                "document_name": row["original_name"],
+                "page_number": int(row["page_number"]),
+                "page_image_url": (
+                    f"/api/documents/{row['id']}/pages/{int(row['page_number'])}"
+                ),
+            },
+        }
+        for row in rows
+        if row["text"]
+    ]
+    section_answer = _section_answer(question, matches)
+    if section_answer is None:
+        return None
+    answer, used_matches = section_answer
+    return _response_payload(answer, used_matches)
+
+
 def _library_answer(
     message: str,
     history: list[dict[str, str]],
@@ -282,9 +491,9 @@ def _library_answer(
         )
     )
     summary_question = bool(
-        re.search(r"\b(?:summari[sz]e|overview)\b", normalized)
+        re.search(r"\b(?:summari[sz]e|summary|overview)\b", normalized)
         and re.search(
-            r"\b(?:main findings|documents?|files?|pdfs?|library|everything)\b",
+            r"\b(?:main findings|document|documents?|files?|pdfs?|library|everything|uploaded|source)\b",
             normalized,
         )
     )
@@ -412,22 +621,38 @@ def answer_question(
     if library_answer is not None:
         return library_answer
 
+    section_answer = _section_answer_from_library(message, owner_id)
+    if section_answer is not None:
+        return section_answer
+
     query = _rewrite_query(message, history)
     matches = retrieve(query, owner_id)
+    if not matches and re.search(r"\b(?:summari[sz]e|summary|overview|explain|about this|what is this)\b", message.lower()):
+        library_answer = _library_answer(
+            "summarize uploaded documents",
+            history,
+            owner_id,
+        )
+        if library_answer is not None:
+            return library_answer
     if not matches:
         answer = NO_ANSWER
         used_matches = []
     else:
-        remote_answer, remote_sources = _grounded_remote_answer(
-            message,
-            history,
-            matches,
-        )
-        if remote_answer and remote_sources is not None:
-            answer = remote_answer
-            used_matches = remote_sources
+        if not _has_question_overlap(query, matches):
+            answer = NO_ANSWER
+            used_matches = []
         else:
-            answer, used_matches = _mock_answer(message, matches)
+            remote_answer, remote_sources = _grounded_remote_answer(
+                message,
+                history,
+                matches,
+            )
+            if remote_answer and remote_sources is not None:
+                answer = remote_answer
+                used_matches = remote_sources
+            else:
+                answer, used_matches = _mock_answer(message, matches)
 
     response = _response_payload(answer, used_matches)
     if get_settings().store_chat_logs:
