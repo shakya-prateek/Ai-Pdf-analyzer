@@ -1908,26 +1908,33 @@ body {
   background: #f8fbff;
 }
 
-.res-collapse__line {
+.res-collapse__panel {
+  display: grid;
+  width: 19px;
+  height: 19px;
+  gap: 2px;
+  grid-template-columns: 1fr 1fr;
+  padding: 2px;
+  border: 2px solid #111827;
+  border-radius: 4px;
+}
+
+.res-collapse__pane {
   display: block;
-  width: 14px;
-  height: 2px;
-  border-radius: 999px;
-  background: #475569;
+  border-radius: 2px;
+  background: transparent;
 }
 
-.res-collapse__line + .res-collapse__line {
-  margin-top: 4px;
+.res-collapse__pane--left {
+  background: #111827;
 }
 
-.res-collapse__arrow {
-  position: absolute;
-  right: 5px;
-  bottom: 1px;
-  color: #64748b;
-  font-size: 10px;
-  font-weight: 900;
-  line-height: 1;
+.res-app--collapsed .res-collapse__pane--left {
+  background: transparent;
+}
+
+.res-app--collapsed .res-collapse__pane--right {
+  background: #111827;
 }
 
 .res-app--collapsed .res-sidebar__top {

@@ -51,10 +51,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             onClick={() => setSidebarOpen((current) => !current)}
             title={sidebarOpen ? "Collapse sidebar" : "Open sidebar"}
           >
-            <span className="res-collapse__line" />
-            <span className="res-collapse__line" />
-            <span className="res-collapse__arrow" aria-hidden="true">
-              {sidebarOpen ? "<" : ">"}
+            <span className="res-collapse__panel" aria-hidden="true">
+              <span className="res-collapse__pane res-collapse__pane--left" />
+              <span className="res-collapse__pane res-collapse__pane--right" />
             </span>
           </button>
         </div>
