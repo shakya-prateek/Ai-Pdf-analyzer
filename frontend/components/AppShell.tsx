@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   BrandIcon,
   FileIcon,
@@ -33,11 +33,35 @@ function isActive(pathname: string, href: string) {
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [darkTheme, setDarkTheme] = useState(false);
+
+  useEffect(() => {
+    try {
+      setDarkTheme(window.localStorage.getItem("askmypdf-theme") === "dark");
+    } catch {
+      setDarkTheme(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("askmypdf-theme", darkTheme ? "dark" : "light");
+    } catch {
+      // Theme persistence is optional; keep the visual toggle working.
+    }
+  }, [darkTheme]);
+
   if (pathname === "/") {
     return <>{children}</>;
   }
   return (
-    <div className={sidebarOpen ? "res-app" : "res-app res-app--collapsed"}>
+    <div
+      className={[
+        "res-app",
+        sidebarOpen ? "" : "res-app--collapsed",
+        darkTheme ? "theme-dark" : ""
+      ].filter(Boolean).join(" ")}
+    >
       <aside className="res-sidebar" aria-label="Primary navigation">
         <div className="res-sidebar__top">
           <Link href="/" className="res-logo" aria-label="AskMyPDF AI home">
@@ -75,9 +99,14 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
 
         <div className="res-sidebar__bottom">
-          <button type="button" className="res-theme">
+          <button
+            type="button"
+            className={darkTheme ? "res-theme res-theme--active" : "res-theme"}
+            aria-pressed={darkTheme}
+            onClick={() => setDarkTheme((current) => !current)}
+          >
             <span aria-hidden="true">Aa</span>
-            Dark theme
+            {darkTheme ? "Light theme" : "Dark theme"}
           </button>
           <div className="res-local">
             <strong>Local workspace</strong>
