@@ -20,6 +20,7 @@ const navItems = [
   { label: "Humanizer", href: "/humanizer", icon: BrandIcon },
   { label: "Paraphraser", href: "/paraphraser", icon: FileIcon },
   { label: "Study", href: "/study", icon: FilesIcon },
+  { label: "Healthcare", href: "/healthcare", icon: BrandIcon },
   { label: "Images", href: "/images", icon: UploadIcon }
 ];
 

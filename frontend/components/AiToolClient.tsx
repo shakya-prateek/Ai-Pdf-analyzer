@@ -15,7 +15,8 @@ type ToolKind =
   | "flashcards"
   | "mind_map"
   | "image_prompt"
-  | "document_draft";
+  | "document_draft"
+  | "healthcare_report";
 
 type ModeOption = {
   label: string;

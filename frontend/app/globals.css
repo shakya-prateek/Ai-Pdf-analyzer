@@ -2168,6 +2168,7 @@ body {
 .tool-card--orange { border-color: #fedfc7; background: linear-gradient(135deg, #ffffff, #fffaf5); }
 .tool-card--pink { border-color: #ffd3e5; background: linear-gradient(135deg, #ffffff, #fff7fb); }
 .tool-card--emerald { border-color: #d2f2d8; background: linear-gradient(135deg, #ffffff, #f6fff8); }
+.tool-card--rose { border-color: #fecdd3; background: linear-gradient(135deg, #ffffff, #fff6f7); }
 
 .tool-card--blue .tool-card__pill,
 .tool-card--blue .tool-card__icon { color: #2563eb; background: #dfe8ff; }
@@ -2183,6 +2184,8 @@ body {
 .tool-card--pink .tool-card__icon { color: #db2777; background: #fce7f3; }
 .tool-card--emerald .tool-card__pill,
 .tool-card--emerald .tool-card__icon { color: #16a34a; background: #dcfce7; }
+.tool-card--rose .tool-card__pill,
+.tool-card--rose .tool-card__icon { color: #e11d48; background: #ffe4e6; }
 
 .tool-workspace {
   max-width: 1300px;

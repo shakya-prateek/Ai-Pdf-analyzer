@@ -58,6 +58,14 @@ const tools = [
     icon: FilesIcon
   },
   {
+    label: "Health",
+    title: "Healthcare",
+    description: "Explain lab-report biomarkers, trends, and follow-up questions safely.",
+    href: "/healthcare",
+    tone: "rose",
+    icon: BrandIcon
+  },
+  {
     label: "Create",
     title: "Images",
     description: "Turn rough ideas into professional image prompts for presentations.",

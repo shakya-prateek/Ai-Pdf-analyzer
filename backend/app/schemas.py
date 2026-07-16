@@ -38,6 +38,7 @@ class ToolRequest(BaseModel):
         "mind_map",
         "image_prompt",
         "document_draft",
+        "healthcare_report",
     ]
     text: str = Field(min_length=1, max_length=12000)
     mode: str | None = Field(default=None, max_length=80)

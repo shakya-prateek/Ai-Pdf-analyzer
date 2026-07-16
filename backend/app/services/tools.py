@@ -53,6 +53,13 @@ TOOL_INSTRUCTIONS = {
         "Create a structured document draft from the user's title or instructions. "
         "Include a title, outline, and a strong opening section."
     ),
+    "healthcare_report": (
+        "You are a careful healthcare report explainer for lab-report-style text. "
+        "Summarize biomarkers and trends in plain language, identify values the user "
+        "may want to discuss with a licensed clinician, and suggest follow-up questions. "
+        "Do not diagnose, prescribe treatment, or claim certainty. Always include a "
+        "clear note that this is educational and not medical advice."
+    ),
 }
 
 
@@ -128,6 +135,23 @@ def _sentences(text: str) -> list[str]:
     return [part.strip() for part in re.split(r"(?<=[.!?])\s+", cleaned) if part.strip()]
 
 
+def _extract_lab_lines(text: str) -> list[str]:
+    lab_pattern = re.compile(
+        r"\b(?:hemoglobin|glucose|cholesterol|hdl|ldl|triglycerides|wbc|rbc|"
+        r"platelet|creatinine|urea|bilirubin|alt|ast|tsh|vitamin|sodium|"
+        r"potassium|calcium|urine|blood|serum|protein|ketone|hba1c)\b|"
+        r"\b\d+(?:\.\d+)?\s?(?:mg/dl|g/dl|mmol/l|iu/l|u/l|ng/ml|pg/ml|%)\b",
+        re.IGNORECASE,
+    )
+    lines = [
+        re.sub(r"\s+", " ", line).strip(" -")
+        for line in text.splitlines()
+        if re.sub(r"\s+", " ", line).strip(" -")
+    ]
+    matches = [line for line in lines if lab_pattern.search(line)]
+    return matches[:12]
+
+
 def _local_generate(payload: ToolRequest) -> str:
     text = payload.text.strip()
     sentences = _sentences(text)
@@ -198,6 +222,24 @@ def _local_generate(payload: ToolRequest) -> str:
             "## Opening Draft\n"
             "This document introduces the topic, clarifies the objective, and organizes the "
             "main points into a clear structure for further editing."
+        )
+    if payload.tool == "healthcare_report":
+        lab_lines = _extract_lab_lines(text)
+        values = "\n".join(f"- {line}" for line in lab_lines) or "- No clear biomarker values were detected in the pasted text."
+        return (
+            "Educational healthcare summary\n\n"
+            "This is not medical advice and is not a diagnosis. Use it to prepare for a "
+            "conversation with a licensed clinician.\n\n"
+            "Values noticed:\n"
+            f"{values}\n\n"
+            "What to review:\n"
+            "- Compare each value with the reference range printed on the original report.\n"
+            "- Look for repeated abnormal markers across multiple reports rather than one value alone.\n"
+            "- Consider symptoms, medications, fasting status, age, and medical history before drawing conclusions.\n\n"
+            "Questions to ask your clinician:\n"
+            "- Which values are outside the lab reference range?\n"
+            "- Do any results require repeat testing or urgent follow-up?\n"
+            "- Could diet, medication, hydration, or recent illness affect these numbers?"
         )
     return sample
 

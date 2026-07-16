@@ -47,7 +47,7 @@ access key.
 - Live upload status polling and classification summaries
 - Browser Web Speech API voice input
 - No-login dashboard with Documents, Investigator, Chat, Humanizer,
-  Paraphraser, Study, and Images prompt tools
+  Paraphraser, Study, Healthcare, and Images prompt tools
 - General AI tools powered by Gemini, Groq, or deterministic local fallback
 - Exact no-answer behavior for unrelated questions
 
@@ -62,6 +62,7 @@ Next.js + TypeScript
   |-- /humanizer           Human tone rewrite
   |-- /paraphraser         Rewrite, correct, translate
   |-- /study               Quizzes, flashcards, mind maps
+  |-- /healthcare          Educational lab-report explainer
   |-- /images              Image prompt studio
   |
   v
@@ -200,7 +201,7 @@ Do not commit `.env` or `.env.local` files.
 | `GET` | `/api/documents/{doc_id}/status` | Poll processing status |
 | `GET` | `/api/documents/{doc_id}/pages/{page_number}` | Serve a protected page image |
 | `POST` | `/api/chat` | Ask a grounded question with history |
-| `POST` | `/api/tools/generate` | Generate text for chat, humanizer, paraphraser, study, and image prompt tools |
+| `POST` | `/api/tools/generate` | Generate text for chat, humanizer, paraphraser, study, healthcare, and image prompt tools |
 | `DELETE` | `/api/chat/history` | Clear persisted workspace chat history |
 | `DELETE` | `/api/documents/{doc_id}` | Permanently delete a workspace document |
 

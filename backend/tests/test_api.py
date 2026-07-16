@@ -76,6 +76,18 @@ async def test_health_and_empty_library(client: AsyncClient):
     assert tool.json()["provider"] == "local:fallback"
     assert "project" in tool.json()["result"].lower()
 
+    healthcare = await client.post(
+        "/api/tools/generate",
+        headers=HEADERS_A,
+        json={
+            "tool": "healthcare_report",
+            "text": "Hemoglobin 13.2 g/dL\nGlucose fasting 106 mg/dL\nLDL cholesterol 142 mg/dL",
+        },
+    )
+    assert healthcare.status_code == 200
+    assert "not medical advice" in healthcare.json()["result"].lower()
+    assert "glucose" in healthcare.json()["result"].lower()
+
 
 @pytest.mark.anyio
 async def test_upload_index_chat_and_page_image(client: AsyncClient):
