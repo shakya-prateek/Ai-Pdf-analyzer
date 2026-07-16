@@ -105,8 +105,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             aria-pressed={darkTheme}
             onClick={() => setDarkTheme((current) => !current)}
           >
-            <span aria-hidden="true">Aa</span>
-            {darkTheme ? "Light theme" : "Dark theme"}
+            <span className="res-theme__switch" aria-hidden="true">
+              <span className="res-theme__knob" />
+            </span>
+            <span className="res-theme__label">
+              {darkTheme ? "Dark theme on" : "Dark theme"}
+            </span>
           </button>
           <div className="res-local">
             <strong>Local workspace</strong>
