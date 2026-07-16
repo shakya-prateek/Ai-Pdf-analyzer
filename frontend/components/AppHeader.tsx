@@ -18,8 +18,8 @@ export function AppHeader() {
         <Link href="/" className="brand" aria-label="DocuScope home">
           <span className="brand__mark"><BrandIcon className="h-5 w-5" /></span>
           <span>
-            <strong>DocuScope</strong>
-            <small>Document intelligence</small>
+            <strong>PDF Analyzer</strong>
+            <small>Evidence workspace</small>
           </span>
         </Link>
         <nav className="primary-nav" aria-label="Primary navigation">
@@ -40,7 +40,7 @@ export function AppHeader() {
         </nav>
         <div className="header-status" title="Files stay on this local application">
           <span className="status-dot" />
-          Local and private
+          Local workspace
         </div>
       </div>
     </header>
