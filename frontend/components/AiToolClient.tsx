@@ -1,8 +1,8 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
-import { apiFetch } from "@/lib/api";
-import { MessageIcon, SendIcon } from "./Icons";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { apiFetch, DocumentRecord } from "@/lib/api";
+import { FilesIcon, MessageIcon, SendIcon } from "./Icons";
 
 type ToolKind =
   | "chat"
@@ -53,12 +53,30 @@ export function AiToolClient({
   const [result, setResult] = useState("");
   const [messages, setMessages] = useState<ToolMessage[]>([]);
   const [loading, setLoading] = useState(false);
+  const [documents, setDocuments] = useState<DocumentRecord[]>([]);
+  const [loadingDocuments, setLoadingDocuments] = useState(true);
   const [error, setError] = useState("");
   const selectedTool = useMemo(() => {
     if (tool !== "paraphrase") return tool;
     if (mode === "correct" || mode === "translate") return mode;
     return "paraphrase";
   }, [mode, tool]);
+  const indexedDocuments = documents.filter((document) => document.status === "indexed");
+
+  const loadDocuments = useCallback(async () => {
+    try {
+      const data = await apiFetch<{ documents: DocumentRecord[] }>("/api/documents");
+      setDocuments(data.documents);
+    } catch {
+      setDocuments([]);
+    } finally {
+      setLoadingDocuments(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadDocuments();
+  }, [loadDocuments]);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -118,6 +136,12 @@ export function AiToolClient({
           ))}
         </div>
       )}
+
+      <DocumentContextBar
+        loading={loadingDocuments}
+        total={documents.length}
+        indexed={indexedDocuments}
+      />
 
       {chatMode ? (
         <div className="simple-chat">
@@ -186,6 +210,42 @@ export function AiToolClient({
 
       {error && <div className="alert alert--error mt-4">{error}</div>}
     </section>
+  );
+}
+
+function DocumentContextBar({
+  loading,
+  total,
+  indexed
+}: {
+  loading: boolean;
+  total: number;
+  indexed: DocumentRecord[];
+}) {
+  const readyCount = indexed.length;
+  const names = indexed.slice(0, 3).map((document) => document.original_name).join(", ");
+  return (
+    <div className={readyCount ? "document-context document-context--ready" : "document-context"}>
+      <span className="document-context__icon"><FilesIcon className="h-4 w-4" /></span>
+      <div>
+        <strong>
+          {loading
+            ? "Checking document library"
+            : readyCount
+              ? `${readyCount} indexed document${readyCount === 1 ? "" : "s"} connected`
+              : "No indexed documents connected"}
+        </strong>
+        <p>
+          {loading
+            ? "Uploaded documents will be available across Chats, Humanizer, Study, Healthcare, and other tools."
+            : readyCount
+              ? `Available here: ${names}${readyCount > 3 ? `, and ${readyCount - 3} more` : ""}.`
+              : total
+                ? "Documents are still processing. Once indexed, every AI tool can use them."
+                : "Upload files from Documents to use them across every AI tool."}
+        </p>
+      </div>
+    </div>
   );
 }
 

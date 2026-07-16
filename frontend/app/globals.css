@@ -2284,6 +2284,49 @@ body {
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
 }
 
+.document-context {
+  display: flex;
+  width: min(980px, 100%);
+  align-items: center;
+  gap: 14px;
+  margin: 0 auto 24px;
+  padding: 14px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  color: #475569;
+  background: #fbfcff;
+}
+
+.document-context--ready {
+  border-color: #bfdbfe;
+  background: #f8fbff;
+}
+
+.document-context__icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 12px;
+  color: #2563eb;
+  background: #eef2ff;
+}
+
+.document-context strong {
+  display: block;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.document-context p {
+  margin-top: 3px;
+  color: #667085;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .split-tool {
   display: grid;
   gap: 24px;

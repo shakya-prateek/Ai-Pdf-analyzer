@@ -313,8 +313,7 @@ def generate_tool(
     payload: ToolRequest,
     owner_id: Annotated[str, Depends(require_workspace)],
 ):
-    del owner_id
-    return generate_tool_response(payload)
+    return generate_tool_response(payload, owner_id)
 
 
 @app.delete("/api/chat/history", status_code=204)

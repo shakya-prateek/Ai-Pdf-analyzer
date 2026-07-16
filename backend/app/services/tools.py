@@ -1,8 +1,10 @@
 import json
 import re
 import urllib.request
+from datetime import date
 
 from ..config import get_settings
+from ..database import connect
 from ..schemas import ToolRequest, ToolResponse
 from .http_client import load_json
 
@@ -72,7 +74,78 @@ def _provider_label() -> str:
     return "local:fallback"
 
 
-def _remote_generate(payload: ToolRequest) -> str | None:
+def _load_document_context(owner_id: str) -> tuple[list[dict[str, str]], str]:
+    with connect() as connection:
+        docs = connection.execute(
+            """SELECT id, original_name, file_type, status, classification_json
+               FROM documents
+               WHERE owner_id = ?
+               ORDER BY created_at DESC""",
+            (owner_id,),
+        ).fetchall()
+        indexed_docs = [doc for doc in docs if doc["status"] == "indexed"]
+        summaries: list[dict[str, str]] = []
+        context_blocks: list[str] = []
+        for doc in indexed_docs[:6]:
+            classification = {}
+            if doc["classification_json"]:
+                try:
+                    classification = json.loads(doc["classification_json"])
+                except json.JSONDecodeError:
+                    classification = {}
+            pages = connection.execute(
+                """SELECT page_number, text
+                   FROM pages
+                   WHERE doc_id = ?
+                   ORDER BY page_number
+                   LIMIT 4""",
+                (doc["id"],),
+            ).fetchall()
+            summary = str(classification.get("summary") or "").strip()
+            doc_type = str(classification.get("document_type") or doc["file_type"])
+            summaries.append(
+                {
+                    "name": doc["original_name"],
+                    "type": doc_type,
+                    "summary": summary,
+                }
+            )
+            page_text = "\n".join(
+                f"Page {page['page_number']}: {page['text'][:1600]}"
+                for page in pages
+                if page["text"]
+            )
+            block = (
+                f"<document name=\"{doc['original_name']}\" type=\"{doc_type}\">\n"
+                f"Summary: {summary or 'No summary available.'}\n"
+                f"{page_text[:4200]}\n"
+                "</document>"
+            )
+            context_blocks.append(block)
+    context = "\n\n".join(context_blocks)
+    return summaries, context[:12000]
+
+
+def _document_count_answer(payload: ToolRequest, documents: list[dict[str, str]]) -> str | None:
+    normalized = payload.text.lower()
+    if not re.search(r"\bhow many\b", normalized):
+        return None
+    if not re.search(r"\b(documents?|pdfs?|files?|uploads?|uploaded)\b", normalized):
+        return None
+    count = len(documents)
+    if count == 0:
+        return "You have no indexed documents in this workspace yet. Upload a document from the Documents page first."
+    names = ", ".join(item["name"] for item in documents[:5])
+    suffix = "" if count <= 5 else f", and {count - 5} more"
+    noun = "document" if count == 1 else "documents"
+    return f"You have {count} indexed {noun}: {names}{suffix}."
+
+
+def _remote_generate(
+    payload: ToolRequest,
+    document_context: str,
+    documents: list[dict[str, str]],
+) -> str | None:
     settings = get_settings()
     instruction = TOOL_INSTRUCTIONS[payload.tool]
     mode_line = f"\nRequested mode: {payload.mode}" if payload.mode else ""
@@ -85,10 +158,24 @@ def _remote_generate(payload: ToolRequest) -> str | None:
             "role": "system",
             "content": (
                 f"{instruction} Be practical and production-quality. "
-                "Do not include unsupported claims."
+                "Do not include unsupported claims. "
+                f"Current date: {date.today().isoformat()}. "
+                "If the user asks about uploaded documents, use the workspace document "
+                "library context supplied below. If the context is insufficient, say so."
             ),
         }
     ]
+    if document_context:
+        document_names = ", ".join(item["name"] for item in documents[:8])
+        messages.append(
+            {
+                "role": "system",
+                "content": (
+                    f"Workspace document library ({len(documents)} indexed): {document_names}\n\n"
+                    f"{document_context}"
+                ),
+            }
+        )
     messages.extend(
         {"role": item.role, "content": item.content[:2500]}
         for item in payload.history[-6:]
@@ -152,16 +239,46 @@ def _extract_lab_lines(text: str) -> list[str]:
     return matches[:12]
 
 
-def _local_generate(payload: ToolRequest) -> str:
+def _document_summary(documents: list[dict[str, str]]) -> str:
+    if not documents:
+        return "No indexed documents are available in this workspace yet."
+    return "\n".join(
+        f"- {item['name']}: {item['summary'] or item['type']}"
+        for item in documents[:8]
+    )
+
+
+def _local_generate(
+    payload: ToolRequest,
+    document_context: str,
+    documents: list[dict[str, str]],
+) -> str:
     text = payload.text.strip()
     sentences = _sentences(text)
     sample = " ".join(sentences[:3]) if sentences else text
+    count_answer = _document_count_answer(payload, documents)
+    if count_answer:
+        return count_answer
+    wants_docs = bool(
+        re.search(
+            r"\b(uploaded|documents?|pdfs?|files?|library|resume|report|source)\b",
+            text,
+            re.IGNORECASE,
+        )
+    )
     if payload.tool == "chat":
+        if wants_docs:
+            return (
+                "I can access your indexed workspace documents.\n\n"
+                f"{_document_summary(documents)}"
+            )
         return (
             "I can help with writing, summarizing, study material, and PDF analysis. "
             "For document-grounded answers, upload a file and open Investigator."
         )
     if payload.tool == "humanize":
+        if wants_docs and document_context:
+            sample = document_context[:900]
         return (
             "Here is a cleaner, more natural version:\n\n"
             f"{sample}\n\n"
@@ -186,7 +303,7 @@ def _local_generate(payload: ToolRequest) -> str:
             f"{text}"
         )
     if payload.tool == "quiz":
-        basis = sentences[:5] or [text]
+        basis = sentences[:5] or _sentences(document_context)[:5] or [text]
         return "\n\n".join(
             f"{index}. Which point is supported by the material?\n"
             f"A. {sentence[:120]}\nB. An unrelated claim\nC. A missing citation\n"
@@ -194,15 +311,16 @@ def _local_generate(payload: ToolRequest) -> str:
             for index, sentence in enumerate(basis, start=1)
         )
     if payload.tool == "flashcards":
-        basis = sentences[:8] or [text]
+        basis = sentences[:8] or _sentences(document_context)[:8] or [text]
         return "\n\n".join(
             f"Q: What is a key point from section {index}?\nA: {sentence[:220]}"
             for index, sentence in enumerate(basis, start=1)
         )
     if payload.tool == "mind_map":
+        mindmap_sentences = sentences[:6] or _sentences(document_context)[:6] or [text]
         branches = "\n".join(
             f"    Point {index}\n      {sentence[:70].replace(':', '-')}"
-            for index, sentence in enumerate((sentences[:6] or [text]), start=1)
+            for index, sentence in enumerate(mindmap_sentences, start=1)
         )
         return f"```mermaid\nmindmap\n  Study Material\n{branches}\n```"
     if payload.tool == "image_prompt":
@@ -224,7 +342,8 @@ def _local_generate(payload: ToolRequest) -> str:
             "main points into a clear structure for further editing."
         )
     if payload.tool == "healthcare_report":
-        lab_lines = _extract_lab_lines(text)
+        source_text = f"{text}\n{document_context}" if wants_docs else text
+        lab_lines = _extract_lab_lines(source_text)
         values = "\n".join(f"- {line}" for line in lab_lines) or "- No clear biomarker values were detected in the pasted text."
         return (
             "Educational healthcare summary\n\n"
@@ -244,6 +363,12 @@ def _local_generate(payload: ToolRequest) -> str:
     return sample
 
 
-def generate_tool_response(payload: ToolRequest) -> ToolResponse:
-    result = _remote_generate(payload) or _local_generate(payload)
+def generate_tool_response(payload: ToolRequest, owner_id: str) -> ToolResponse:
+    documents, document_context = _load_document_context(owner_id)
+    deterministic_answer = _document_count_answer(payload, documents)
+    result = (
+        deterministic_answer
+        or _remote_generate(payload, document_context, documents)
+        or _local_generate(payload, document_context, documents)
+    )
     return ToolResponse(result=result, provider=_provider_label())

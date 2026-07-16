@@ -141,6 +141,18 @@ async def test_upload_index_chat_and_page_image(client: AsyncClient):
     )
     assert "You have 1 indexed document: sample_invoice.txt." == document_count.json()["answer"]
 
+    shared_tool_count = await client.post(
+        "/api/tools/generate",
+        headers=HEADERS_A,
+        json={
+            "tool": "chat",
+            "text": "How many documents have I uploaded?",
+            "history": [],
+        },
+    )
+    assert shared_tool_count.status_code == 200
+    assert shared_tool_count.json()["result"] == "You have 1 indexed document: sample_invoice.txt."
+
     summary = await client.post(
         "/api/chat",
         headers=HEADERS_A,
