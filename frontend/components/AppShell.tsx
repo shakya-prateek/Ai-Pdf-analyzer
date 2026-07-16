@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   BrandIcon,
   FileIcon,
@@ -32,19 +32,30 @@ function isActive(pathname: string, href: string) {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   if (pathname === "/") {
     return <>{children}</>;
   }
   return (
-    <div className="res-app">
+    <div className={sidebarOpen ? "res-app" : "res-app res-app--collapsed"}>
       <aside className="res-sidebar" aria-label="Primary navigation">
         <div className="res-sidebar__top">
           <Link href="/" className="res-logo" aria-label="AskMyPDF AI home">
             <span><BrandIcon className="h-6 w-6" /></span>
           </Link>
-          <button type="button" className="res-collapse" aria-label="Collapse sidebar">
-            <span />
-            <span />
+          <button
+            type="button"
+            className="res-collapse"
+            aria-label={sidebarOpen ? "Collapse sidebar" : "Open sidebar"}
+            aria-expanded={sidebarOpen}
+            onClick={() => setSidebarOpen((current) => !current)}
+            title={sidebarOpen ? "Collapse sidebar" : "Open sidebar"}
+          >
+            <span className="res-collapse__line" />
+            <span className="res-collapse__line" />
+            <span className="res-collapse__arrow" aria-hidden="true">
+              {sidebarOpen ? "<" : ">"}
+            </span>
           </button>
         </div>
 
