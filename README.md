@@ -24,8 +24,8 @@ npm run dev
 ```
 
 This starts FastAPI at `http://localhost:8000` and Next.js at
-`http://localhost:3000`. Open the frontend, choose a tool from the dashboard,
-upload a document, and start asking questions. Local mode requires no account or
+`http://localhost:3000`. Open the landing page, start from the upload CTA, or
+use `/workspace` to choose a tool dashboard. Local mode requires no account or
 access key.
 
 ## Features
@@ -55,7 +55,8 @@ access key.
 
 ```text
 Next.js + TypeScript
-  |-- /                    Tool dashboard
+  |-- /                    Public landing page
+  |-- /workspace           Tool dashboard
   |-- /documents           Bulk upload and status polling
   |-- /investigator        PDF chat, citations, voice input
   |-- /chats               General AI assistant
@@ -132,8 +133,9 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open `http://localhost:3000`. Upload documents at `/documents` and ask
-document-grounded questions at `/investigator`.
+Open `http://localhost:3000` for the public landing page. Upload documents at
+`/documents`, open the tool dashboard at `/workspace`, and ask document-grounded
+questions at `/investigator`.
 
 ## Sample Documents
 

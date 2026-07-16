@@ -13,7 +13,7 @@ import {
 } from "./Icons";
 
 const navItems = [
-  { label: "New", href: "/", icon: UploadIcon },
+  { label: "New", href: "/workspace", icon: UploadIcon },
   { label: "Documents", href: "/documents", icon: FilesIcon },
   { label: "Investigator", href: "/investigator", icon: SearchIcon },
   { label: "Chats", href: "/chats", icon: MessageIcon },
@@ -26,12 +26,15 @@ const navItems = [
 
 function isActive(pathname: string, href: string) {
   if (href === "/documents") return pathname === "/documents" || pathname === "/upload";
-  if (href === "/") return pathname === "/";
+  if (href === "/workspace") return pathname === "/workspace";
   return pathname.startsWith(href);
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  if (pathname === "/") {
+    return <>{children}</>;
+  }
   return (
     <div className="res-app">
       <aside className="res-sidebar" aria-label="Primary navigation">
