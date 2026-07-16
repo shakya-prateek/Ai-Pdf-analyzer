@@ -173,9 +173,9 @@ export function UploadClient() {
     <main className="library-shell">
       <div className="page-heading page-heading--library">
         <div>
-          <p className="eyebrow">Document library</p>
-          <h1>Manage source documents</h1>
-          <p>Upload, process, and review every file available to the research assistant.</p>
+          <p className="eyebrow">Source management</p>
+          <h1>Build your document library</h1>
+          <p>Upload files, monitor indexing, and remove sources you no longer need.</p>
         </div>
         <Link href="/" className="secondary-button">
           <MessageIcon className="h-4 w-4" />
@@ -184,18 +184,37 @@ export function UploadClient() {
       </div>
 
       <section className="metrics-grid" aria-label="Document statistics">
-        <Metric label="Total documents" value={documents.length} icon={<FilesIcon className="h-5 w-5" />} />
-        <Metric label="Ready to search" value={indexedCount} icon={<CheckIcon className="h-5 w-5" />} tone="success" />
-        <Metric label="Processing" value={processingCount} icon={<RefreshIcon className="h-5 w-5" />} tone="warning" />
-        <Metric label="Needs attention" value={failedCount} icon={<FileIcon className="h-5 w-5" />} tone="danger" />
+        <Metric
+          label="Total documents"
+          value={loadingDocuments ? "—" : documents.length}
+          icon={<FilesIcon className="h-5 w-5" />}
+        />
+        <Metric
+          label="Ready to search"
+          value={loadingDocuments ? "—" : indexedCount}
+          icon={<CheckIcon className="h-5 w-5" />}
+          tone="success"
+        />
+        <Metric
+          label="Processing"
+          value={loadingDocuments ? "—" : processingCount}
+          icon={<RefreshIcon className="h-5 w-5" />}
+          tone="warning"
+        />
+        <Metric
+          label="Needs attention"
+          value={loadingDocuments ? "—" : failedCount}
+          icon={<FileIcon className="h-5 w-5" />}
+          tone="danger"
+        />
       </section>
 
       <div className="library-grid">
         <section className="upload-panel">
           <div className="section-heading">
             <div>
-              <h2>Add documents</h2>
-              <p>Files are stored privately and served only through the API.</p>
+              <h2>Upload sources</h2>
+              <p>Files stay local and are converted into searchable page evidence.</p>
             </div>
           </div>
 
@@ -220,8 +239,8 @@ export function UploadClient() {
               className="sr-only"
             />
             <span className="drop-zone__icon"><UploadIcon className="h-6 w-6" /></span>
-            <h3>Drop files here</h3>
-            <p>PDF, PNG, JPG, JPEG, or TXT · maximum 10 MB per file</p>
+            <h3>Drop documents here</h3>
+            <p>PDF, PNG, JPG, JPEG, or TXT. Maximum 10 MB per file.</p>
             <button
               type="button"
               className="secondary-button"
@@ -281,8 +300,8 @@ export function UploadClient() {
         <section className="documents-panel">
           <div className="section-heading">
             <div>
-              <h2>Processing activity</h2>
-              <p>Status and classification for every uploaded document.</p>
+              <h2>Library status</h2>
+              <p>Ready files can be searched immediately from the analyst workspace.</p>
             </div>
             <button
               type="button"
@@ -373,7 +392,7 @@ function Metric({
   tone = "default"
 }: {
   label: string;
-  value: number;
+  value: number | string;
   icon: React.ReactNode;
   tone?: "default" | "success" | "warning" | "danger";
 }) {
