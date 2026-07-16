@@ -2155,7 +2155,7 @@ body {
   display: grid;
   min-height: 220px;
   overflow: hidden;
-  padding: 28px;
+  padding: 30px 132px 30px 30px;
   border: 1px solid #dbe4f0;
   border-radius: 24px;
   color: #111827;
@@ -2189,7 +2189,7 @@ body {
 }
 
 .tool-card p {
-  max-width: 310px;
+  max-width: 360px;
   margin-top: 12px;
   color: #667085;
   font-size: 15px;
@@ -2204,13 +2204,20 @@ body {
 
 .tool-card__icon {
   position: absolute;
-  top: 24px;
-  right: 24px;
+  top: 28px;
+  right: 28px;
   display: grid;
-  width: 74px;
-  height: 74px;
+  width: 92px;
+  height: 92px;
   place-items: center;
-  border-radius: 22px;
+  border-radius: 26px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.tool-card__icon svg {
+  width: 46px;
+  height: 46px;
+  stroke-width: 1.9;
 }
 
 .tool-card--blue { border-color: #cbdcff; background: linear-gradient(135deg, #ffffff, #f6f9ff); }
