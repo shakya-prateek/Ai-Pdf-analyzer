@@ -115,7 +115,11 @@ def _remote_classify(text: str, has_tables: bool) -> dict[str, Any] | None:
 
 
 def classify_document(text: str, has_tables: bool, file_type: str) -> dict[str, Any]:
-    remote = _remote_classify(text, has_tables)
+    remote = (
+        _remote_classify(text, has_tables)
+        if get_settings().enable_ai_classification
+        else None
+    )
     if remote:
         try:
             return DocumentClassification.model_validate(remote).model_dump()

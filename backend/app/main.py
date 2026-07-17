@@ -25,6 +25,7 @@ from .config import get_settings
 from .database import connect, init_db, now_iso, row_to_document
 from .schemas import ChatRequest, ChatResponse, ToolRequest, ToolResponse
 from .services.processor import process_document
+from .services.parser import _render_pdf_page, _save_page_image
 from .services.rag import answer_question
 from .services.documents import DocumentProcessingError, delete_document
 from .services.tools import generate_tool_response
@@ -264,7 +265,7 @@ def page_image(
 ):
     with connect() as connection:
         row = connection.execute(
-            """SELECT p.image_path FROM pages p
+            """SELECT p.image_path, d.stored_name, d.file_type FROM pages p
                JOIN documents d ON d.id = p.doc_id
                WHERE p.doc_id = ? AND p.page_number = ? AND d.owner_id = ?""",
             (doc_id, page_number, owner_id),
@@ -273,8 +274,26 @@ def page_image(
         raise HTTPException(status_code=404, detail="Page not found")
     path = Path(row["image_path"])
     resolved_path = path.resolve()
-    if not resolved_path.is_file() or settings.storage_dir.resolve() not in resolved_path.parents:
+    storage_root = settings.storage_dir.resolve()
+    if storage_root not in resolved_path.parents:
         raise HTTPException(status_code=404, detail="Page image unavailable")
+    if not resolved_path.is_file():
+        source_path = Path(row["stored_name"]).resolve()
+        if (
+            row["file_type"] != "pdf"
+            or storage_root not in source_path.parents
+            or not source_path.is_file()
+        ):
+            raise HTTPException(status_code=404, detail="Page image unavailable")
+        try:
+            image = _render_pdf_page(
+                source_path,
+                page_number,
+                settings.pdf_render_dpi,
+            )
+            _save_page_image(image, resolved_path)
+        except Exception as exc:
+            raise HTTPException(status_code=404, detail="Page image unavailable") from exc
     return FileResponse(
         resolved_path,
         media_type="image/png",

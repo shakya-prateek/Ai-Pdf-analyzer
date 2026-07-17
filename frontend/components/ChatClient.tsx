@@ -82,10 +82,11 @@ export function ChatClient() {
   const [listening, setListening] = useState(false);
   const [speechMessage, setSpeechMessage] = useState("");
   const [indexedCount, setIndexedCount] = useState<number | null>(null);
-  const [backendOnline, setBackendOnline] = useState(false);
+  const [backendState, setBackendState] = useState<"connecting" | "online" | "offline">("connecting");
   const [aiProvider, setAiProvider] = useState("Local");
   const recognitionRef = useRef<SpeechRecognitionType | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const backendOnline = backendState === "online";
 
   const loadOverview = useCallback(async (active = true) => {
     try {
@@ -94,7 +95,7 @@ export function ChatClient() {
         apiFetch<{ ai_enabled: boolean; provider: string }>("/api/capabilities")
       ]);
       if (!active) return;
-      setBackendOnline(true);
+      setBackendState("online");
       setIndexedCount(data.documents.filter((document) => document.status === "indexed").length);
       setAiProvider(
         capabilities.ai_enabled
@@ -103,7 +104,7 @@ export function ChatClient() {
       );
     } catch {
       if (!active) return;
-      setBackendOnline(false);
+      setBackendState("offline");
       setIndexedCount(null);
       setAiProvider("Offline");
     }
@@ -111,11 +112,15 @@ export function ChatClient() {
 
   useEffect(() => {
     let active = true;
-    void loadOverview(active);
-    const timer = window.setInterval(() => void loadOverview(active), 5000);
+    let timer: number | undefined;
+    const refresh = async () => {
+      await loadOverview(active);
+      if (active) timer = window.setTimeout(refresh, 15_000);
+    };
+    void refresh();
     return () => {
       active = false;
-      window.clearInterval(timer);
+      if (timer) window.clearTimeout(timer);
     };
   }, [loadOverview]);
 
@@ -163,7 +168,11 @@ export function ChatClient() {
   const askQuestion = async (question: string) => {
     if (!question.trim() || loading) return;
     if (!backendOnline) {
-      setError("The document service is offline. Start the project with npm run dev.");
+      setError(
+        backendState === "connecting"
+          ? "The document service is waking up. Please wait a moment."
+          : "The document service is temporarily unavailable. Please try again."
+      );
       return;
     }
     if (!indexedCount) {
@@ -215,7 +224,7 @@ export function ChatClient() {
             <span className="text-sm font-medium text-slate-600">API service</span>
             <span className={backendOnline ? "service-state service-state--online" : "service-state service-state--offline"}>
               <span />
-              {backendOnline ? "Online" : "Offline"}
+              {backendOnline ? "Online" : backendState === "connecting" ? "Waking up" : "Unavailable"}
             </span>
           </div>
           <div className="mt-4 border-t border-slate-200 pt-4">
@@ -299,11 +308,13 @@ export function ChatClient() {
                   </>
                 ) : (
                   <>
-                    <h3>{backendOnline ? "What would you like to find?" : "Document service unavailable"}</h3>
+                    <h3>{backendOnline ? "What would you like to find?" : backendState === "connecting" ? "Starting document service" : "Document service unavailable"}</h3>
                     <p>
                       {backendOnline
                         ? "Ask a question, request a summary, or extract key details."
-                        : "Start both services from the project root with npm run dev."}
+                        : backendState === "connecting"
+                          ? "The service is waking up and will be ready shortly."
+                          : "The service could not be reached. Please retry in a moment."}
                     </p>
                     {backendOnline && (
                       <div className="suggestion-list">

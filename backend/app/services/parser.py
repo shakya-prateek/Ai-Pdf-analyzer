@@ -78,9 +78,7 @@ def _parse_pdf(file_path: Path, pages_dir: Path) -> list[dict[str, Any]]:
 
         for index, page in enumerate(pdf.pages):
             page_number = index + 1
-            image = _render_pdf_page(file_path, page_number, settings.pdf_render_dpi)
             image_path = pages_dir / f"page_{page_number}.png"
-            _save_page_image(image, image_path)
 
             text = (page.extract_text() or "").strip()
             tables = []
@@ -93,6 +91,8 @@ def _parse_pdf(file_path: Path, pages_dir: Path) -> list[dict[str, Any]]:
                 tables = []
 
             if len(text) < 40:
+                image = _render_pdf_page(file_path, page_number, settings.pdf_render_dpi)
+                _save_page_image(image, image_path)
                 ocr_text = _ocr(image)
                 if len(ocr_text) > len(text):
                     text = ocr_text

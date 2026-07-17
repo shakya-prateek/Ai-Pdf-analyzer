@@ -122,7 +122,11 @@ uvicorn app.main:app --reload
 
 The API runs at `http://localhost:8000`. Swagger documentation is available at `http://localhost:8000/docs`.
 
-By default, the app uses a locally cached `all-MiniLM-L6-v2` model when available and immediately falls back to SQLite lexical retrieval when it is not. Set `EMBEDDING_LOCAL_ONLY=false` once if you want sentence-transformers to download the free model automatically.
+The default installation uses fast SQLite lexical retrieval and keeps the
+deployment image small. To enable local embedding-based retrieval, install the
+optional dependencies with `pip install -r requirements-semantic.txt`, set
+`ENABLE_SEMANTIC_SEARCH=true`, and set `EMBEDDING_LOCAL_ONLY=false` once if the
+model needs to be downloaded.
 
 ## Frontend Setup
 
@@ -178,6 +182,7 @@ Backend, from `backend/.env.example`:
 | `EMBEDDING_MODEL` | `all-MiniLM-L6-v2` | sentence-transformers model |
 | `ENABLE_SEMANTIC_SEARCH` | `false` | Enable Chroma semantic retrieval; lexical search is faster for small demos |
 | `EMBEDDING_LOCAL_ONLY` | `true` | Avoid network downloads at runtime |
+| `ENABLE_AI_CLASSIFICATION` | `false` | Use the configured LLM for classification; local classification indexes faster |
 | `SINGLE_USER_MODE` | `true` | Open directly into one private local workspace |
 | `WORKSPACE_ACCESS_TOKENS` | empty | Optional keys when single-user mode is disabled |
 | `STORE_CHAT_LOGS` | `false` | Persist chat logs only when explicitly enabled |
@@ -221,6 +226,10 @@ Processing states are `uploaded`, `parsing`, `classifying`, `indexing`, `indexed
 6. Keep `SINGLE_USER_MODE=true` for a simple private demo, or disable it and
    configure `WORKSPACE_ACCESS_TOKENS` for multiple isolated workspaces.
 7. Configure optional LLM keys.
+
+The default Docker image omits the optional embedding stack to reduce build size
+and cold-start latency. Document chat still uses lexical retrieval and the
+configured Groq or Gemini model.
 
 The included `render.yaml` uses Render's free ephemeral filesystem under `/tmp`. Uploaded data resets when the service is recreated or idled. Persistent SQLite, Chroma, and uploaded files require a persistent disk or external storage; for a free assessment demo, rerun sample ingestion after deployment.
 

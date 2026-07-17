@@ -30,6 +30,7 @@ class Settings:
     embedding_model: str
     enable_semantic_search: bool
     embedding_local_only: bool
+    enable_ai_classification: bool
     workspace_access_tokens: tuple[str, ...]
     single_user_mode: bool
     store_chat_logs: bool
@@ -90,6 +91,9 @@ def get_settings() -> Settings:
         embedding_model=os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2"),
         enable_semantic_search=_as_bool(os.getenv("ENABLE_SEMANTIC_SEARCH", "false"), False),
         embedding_local_only=_as_bool(os.getenv("EMBEDDING_LOCAL_ONLY", "true"), True),
+        enable_ai_classification=_as_bool(
+            os.getenv("ENABLE_AI_CLASSIFICATION", "false"), False
+        ),
         workspace_access_tokens=access_tokens,
         single_user_mode=_as_bool(os.getenv("SINGLE_USER_MODE", "true"), True),
         store_chat_logs=_as_bool(os.getenv("STORE_CHAT_LOGS", "false"), False),

@@ -387,3 +387,78 @@ def test_pdf_renderer_falls_back_when_poppler_is_unavailable(monkeypatch):
     rendered = _render_pdf_page(pdf_path, 1)
     assert rendered.width > 0
     assert rendered.height > 0
+
+
+def test_searchable_pdf_defers_page_rendering(monkeypatch):
+    from app.services import parser
+
+    class SearchablePage:
+        def extract_text(self):
+            return "This searchable PDF page contains enough text to index without OCR rendering."
+
+        def extract_tables(self):
+            return []
+
+    class SearchablePdf:
+        pages = [SearchablePage()]
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_):
+            return None
+
+    monkeypatch.setattr("pdfplumber.open", lambda _: SearchablePdf())
+    monkeypatch.setattr(
+        parser,
+        "_render_pdf_page",
+        lambda *_: pytest.fail("searchable pages should render lazily"),
+    )
+
+    pages_dir = TEST_ROOT / "lazy-pages"
+    records = parser._parse_pdf(TEST_ROOT / "searchable.pdf", pages_dir)
+
+    assert records[0]["text"].startswith("This searchable PDF")
+    assert not Path(records[0]["image_path"]).exists()
+
+
+@pytest.mark.anyio
+async def test_page_preview_is_rendered_on_demand(client: AsyncClient, monkeypatch):
+    from PIL import Image
+    from app.auth import workspace_id_from_token
+    from app import main
+
+    storage_dir = Path(os.environ["STORAGE_DIR"])
+    original = storage_dir / "originals" / "lazy-preview.pdf"
+    preview = storage_dir / "pages" / "lazy-preview" / "page_1.png"
+    original.parent.mkdir(parents=True, exist_ok=True)
+    original.write_bytes(b"%PDF-1.4\n%%EOF")
+
+    with connect() as connection:
+        connection.execute(
+            """INSERT INTO documents
+               (id, owner_id, original_name, stored_name, file_type, status, created_at)
+               VALUES ('lazy-preview', ?, 'preview.pdf', ?, 'pdf', 'indexed', '2026-01-01')""",
+            (workspace_id_from_token(TOKEN_A), str(original)),
+        )
+        connection.execute(
+            """INSERT INTO pages
+               (doc_id, page_number, text, tables_json, image_path)
+               VALUES ('lazy-preview', 1, 'Searchable page text', '[]', ?)""",
+            (str(preview),),
+        )
+
+    monkeypatch.setattr(
+        main,
+        "_render_pdf_page",
+        lambda *_: Image.new("RGB", (240, 320), "white"),
+    )
+
+    response = await client.get(
+        "/api/documents/lazy-preview/pages/1",
+        headers=HEADERS_A,
+    )
+
+    assert response.status_code == 200
+    assert response.content.startswith(b"\x89PNG")
+    assert preview.is_file()
