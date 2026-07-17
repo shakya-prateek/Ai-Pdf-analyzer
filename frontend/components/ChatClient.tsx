@@ -5,7 +5,6 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch, Citation, DocumentRecord } from "@/lib/api";
 import { CitationCards } from "./CitationCards";
 import {
-  CheckIcon,
   FilesIcon,
   MessageIcon,
   MicIcon,
@@ -186,6 +185,7 @@ export function ChatClient() {
     setInput("");
     setError("");
     setLoading(true);
+    await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
     try {
       const response = await apiFetch<{ answer: string; citations: Citation[] }>("/api/chat", {
         method: "POST",
@@ -210,53 +210,6 @@ export function ChatClient() {
 
   return (
     <main className="workspace-shell">
-      <aside className="workspace-sidebar">
-        <div>
-          <p className="eyebrow">Library overview</p>
-          <h1 className="mt-2 text-xl font-semibold tracking-tight text-slate-950">Source set</h1>
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-            Ask grounded questions across documents that have completed indexing.
-          </p>
-        </div>
-
-        <div className="status-card">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-600">API service</span>
-            <span className={backendOnline ? "service-state service-state--online" : "service-state service-state--offline"}>
-              <span />
-              {backendOnline ? "Online" : backendState === "connecting" ? "Waking up" : "Unavailable"}
-            </span>
-          </div>
-          <div className="mt-4 border-t border-slate-200 pt-4">
-            <span className="text-3xl font-semibold tracking-tight text-slate-950">
-              {indexedCount ?? "—"}
-            </span>
-            <p className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-              Indexed documents
-            </p>
-          </div>
-        </div>
-
-        <div className="sidebar-section">
-          <p className="sidebar-label">Answer safeguards</p>
-          {[
-            "Grounded answers only",
-            "Page-level citations",
-            "Private local storage"
-          ].map((item) => (
-            <div key={item} className="sidebar-check">
-              <span><CheckIcon className="h-3.5 w-3.5" /></span>
-              {item}
-            </div>
-          ))}
-        </div>
-
-        <Link href="/documents" className="secondary-button mt-auto">
-          <FilesIcon className="h-4 w-4" />
-          Manage documents
-        </Link>
-      </aside>
-
       <section className="workspace-main">
         <div className="page-heading">
           <div>
@@ -264,18 +217,34 @@ export function ChatClient() {
             <h2>Analyze your source documents</h2>
             <p>Professional answers with page references and source previews.</p>
           </div>
-          {messages.length > 0 && (
+          <div className="page-heading__actions">
+            {messages.length > 0 && (
+              <button
+                type="button"
+                className="text-button"
+                onClick={() => {
+                  setMessages([]);
+                  void apiFetch("/api/chat/history", { method: "DELETE" });
+                }}
+              >
+                Clear conversation
+              </button>
+            )}
             <button
               type="button"
-              className="text-button"
-              onClick={() => {
-                setMessages([]);
-                void apiFetch("/api/chat/history", { method: "DELETE" });
-              }}
+              className={`api-service api-service--${backendState}`}
+              onClick={() => void loadOverview()}
+              aria-label="Refresh API service status"
+              title="Refresh API status"
             >
-              Clear conversation
+              <span />
+              {backendOnline
+                ? "API online"
+                : backendState === "connecting"
+                  ? "API waking up"
+                  : "API unavailable"}
             </button>
-          )}
+          </div>
         </div>
 
         <div className="chat-panel">
